@@ -446,12 +446,18 @@ sh.getActiveMigrations = function(configDB) {
 sh.getRecentFailedRounds = function(configDB) {
     if (configDB === undefined)
         configDB = db.getSiblingDB('config');
-    var balErrs = configDB.actionlog.find({what: "balancer.round", "details.errorOccured": true}).sort({time: -1}).limit(5);
+    var balErrs = configDB.actionlog.find({what: "balancer.round"}).sort({time: -1}).limit(5);
     var result = {count: 0, lastErr: "", lastTime: " "};
     if (balErrs != null) {
-        result.count = balErrs.length();
-        result.lastErr = balErrs[0].details.errmsg;
-        result.lastTime = balErrs[0].time;
+        balErrs.forEach(function(r) {
+            if (r.details.errorOccured) {
+                result.count += 1;
+                if (result.count == 1) {
+                    result.lastErr = r.details.errmsg;
+                    result.lastTime = r.time;
+                }
+            }
+        });
     }
     return result;
 };
